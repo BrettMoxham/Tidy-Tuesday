@@ -1,0 +1,94 @@
+---
+title: "07 17 2020 - Roman Emperors"
+author: "Brett Moxham"
+date: "17/07/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+EDA for the Tidy Tuesday data set - Roman Emperors. Data found [here](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-08-13).
+
+
+
+## Libraries and Data
+
+```{r}
+library(tidyverse)
+library(lubridate)
+
+
+emperors <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-08-13/emperors.csv")
+
+
+emperors <- emperors %>% 
+  mutate(text = paste("Name: ", name,
+                      "<br>Dynasty: ", dynasty,
+                      "<br>Birth City: ", birth_cty,
+                      "<br>Rise to Power: ", rise
+                      )
+  )
+
+emperors$birth_cty %>% str_replace_na("Unknown")
+```
+
+
+```{r}
+
+p_0 <- emperors %>%
+  ggplot(aes(y = as.factor(birth_prv)))+
+  geom_segment(aes(x = reign_start, y = birth_prv, xend = reign_end, yend = birth_prv))
+
+ggsave("images/Roman_Emperors/p_0.png",p_0)
+
+```
+
+```{r}
+
+p_1 <- emperors %>% 
+  ggplot(aes(color = as.factor(era))  )+
+  geom_segment(aes(x = as.Date(reign_start), y = (birth_prv), xend = as.Date(reign_end), yend = (birth_prv), size =4), show.legend = F)+
+  geom_label(aes(label = name, x = reign_start, y = birth_prv), show.legend = F)+
+  bmox::theme_bmox()+
+  theme(
+    #panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+  
+ggsave("images/Roman_Emperors/p_1.png")
+
+```
+
+
+```{r}
+
+p_2 <- emperors %>% 
+  ggplot(aes(color = as.factor(era), text = text))+
+  geom_segment(aes(x = as.Date(reign_start), y = (birth_prv), xend = as.Date(reign_end), yend = (birth_prv), size =4), show.legend = F)+
+  geom_label(aes(label = name, x = reign_start, y = birth_prv), show.legend = F, alpha = .5)+
+  labs(
+    x = "Year",
+    y = "Birth Province",
+    title = "Roman Emperors by Province", 
+    caption =  "@bmoxO9 | Source: Tidy Tuesday|  #100DaysofCode | #TidyTuesday"
+  )+
+  theme_minimal()+
+  theme(
+    #panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+  )
+
+
+
+plotly_1 <- ggplotly(p_2, tooltip = "text")
+
+htmlwidgets::saveWidget(plotly_1, "images/Roman_Emporers/RomanEmperor.html")
+
+
+```
+
+
+
+
