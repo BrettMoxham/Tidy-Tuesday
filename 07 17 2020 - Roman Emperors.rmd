@@ -18,6 +18,8 @@ EDA for the Tidy Tuesday data set - Roman Emperors. Data found [here](https://gi
 ```{r}
 library(tidyverse)
 library(lubridate)
+library(plotly)
+
 
 
 emperors <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-08-13/emperors.csv")
@@ -27,7 +29,9 @@ emperors <- emperors %>%
   mutate(text = paste("Name: ", name,
                       "<br>Dynasty: ", dynasty,
                       "<br>Birth City: ", birth_cty,
-                      "<br>Rise to Power: ", rise
+                      "<br>Rise to Power: ", rise,
+                      "<br>Beginning Year:", reign_start,
+                      "<br>End Year:", reign_end
                       )
   )
 
@@ -67,7 +71,7 @@ ggsave("images/Roman_Emperors/p_1.png")
 p_2 <- emperors %>% 
   ggplot(aes(color = as.factor(era), text = text))+
   geom_segment(aes(x = as.Date(reign_start), y = (birth_prv), xend = as.Date(reign_end), yend = (birth_prv), size =4), show.legend = F)+
-  geom_label(aes(label = name, x = reign_start, y = birth_prv), show.legend = F, alpha = .5)+
+  geom_label(aes(label = name, x = reign_start, y = birth_prv), show.legend = F)+
   labs(
     x = "Year",
     y = "Birth Province",
@@ -80,12 +84,20 @@ p_2 <- emperors %>%
     panel.grid.minor = element_blank(),
   )
 
+ggsave("images/Roman_Emperors/p_2.png", p_2)
+
 
 
 plotly_1 <- ggplotly(p_2, tooltip = "text")
 
 htmlwidgets::saveWidget(plotly_1, "images/Roman_Emporers/RomanEmperor.html")
 
+
+orca(plotly_1, "images/Roman_Emperors/plotly_re.png")
+
+chart_link = api_create(plotly_1, "Roman_Emperors_TidyTuesday")
+
+chart_link
 
 ```
 

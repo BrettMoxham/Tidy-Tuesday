@@ -1,0 +1,53 @@
+---
+title: "07 20 2020 - Rap Artists"
+author: "Brett Moxham"
+date: "20/07/2020"
+output: html_document
+---
+
+## Libraries and Data
+
+Data is part of the Tidy Tuesday collection. Found [here](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-04-14/readme.md).
+
+```{r}
+library(tidyverse)
+
+
+polls <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-14/polls.csv')
+rankings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-14/rankings.csv')
+
+```
+
+
+
+
+```{r}
+rankings %>% 
+  count(artist, sort = TRUE)
+
+polls %>% 
+  distinct(critic_name)
+
+polls %>% 
+  count(critic_country, sort = T)
+
+  
+polls <- polls %>% 
+  separate(artist, into = c("artist", "featured"), sep = "ft. ") %>% 
+  mutate(
+    featured = case_when(
+      featured == "Snoop Doggy Dogg" ~ "Snoop Dogg",
+      TRUE ~ as.character(featured)),
+    artist = case_when(
+      artist == "Snoop Doggy Dogg" ~ "Snoop Dogg",
+      TRUE ~ as.character(artist))
+    )
+
+
+polls %>%
+  filter(!is.na(featured)) %>% 
+  count(featured, sort = T)
+  
+  
+```
+
