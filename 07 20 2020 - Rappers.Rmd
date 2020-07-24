@@ -38,16 +38,119 @@ polls <- polls %>%
     featured = case_when(
       featured == "Snoop Doggy Dogg" ~ "Snoop Dogg",
       TRUE ~ as.character(featured)),
-    artist = case_when(
-      artist == "Snoop Doggy Dogg" ~ "Snoop Dogg",
-      TRUE ~ as.character(artist))
-    )
+      featured = str_trim(featured))
+
 
 
 polls %>%
+  filter(!is.na(featured))%>% 
+  count(featured, sort = T) %>% 
+  top_n(10)
+
+
+plot_featured <- polls %>% 
   filter(!is.na(featured)) %>% 
-  count(featured, sort = T)
-  
-  
+  count(featured, sort = T) %>% 
+  top_n(10) %>% 
+  ggplot(aes(reorder(featured, -n), n))+
+  geom_col(fill = "firebrick")+
+  bmox::theme_bmox()+
+  theme(
+    axis.text.x = element_text(angle = 90),
+    panel.grid.major.x  = element_blank(),
+    panel.grid.minor = element_blank()
+    
+  )+
+  labs(
+    y ="",
+    x="",
+    title = "Featured Artists"
+  )
+
+
+plot_artist <- polls %>% 
+  count(artist, sort = T) %>% 
+  top_n(10) %>% 
+  ggplot(aes(reorder(artist, -n), n))+
+  geom_col(fill = "blue")+
+  bmox::theme_bmox()+
+  theme(
+    axis.text.x = element_text(angle = 90),
+    panel.grid.major.x  = element_blank(),
+    panel.grid.minor = element_blank()
+    
+  )+
+  labs(
+    y ="",
+    x="",
+    title = "Main Artists"
+  )
+
+
 ```
+
+
+
+```{r}
+rankings_sep <- rankings %>% 
+    separate(artist, into = c("artist", "featured"), sep = "ft. ") %>% 
+  mutate(
+    featured = case_when(
+      featured == "Snoop Doggy Dogg" ~ "Snoop Dogg",
+      TRUE ~ as.character(featured)),
+      featured = str_trim(featured))
+
+
+## Artist (Jay-Z)
+
+rankings_sep %>% 
+  count(artist, sort = T) %>% 
+  top_n(10)
+
+rankings_sep %>% 
+  filter(artist == "JAY-Z")
+
+
+## Featured (Snoop)
+
+rankings_sep %>% 
+  filter(!is.na(featured)) %>% 
+  count(featured, sort = T) %>% 
+  top_n(10)
+
+rankings_sep %>% 
+  filter(featured == "Snoop Dogg")
+
+
+## ARTIST PLOTS BY YEAR
+ggplot(rankings_sep, aes(year, points, color = factor(gender), alpha =.5, label = paste(title, artist, sep =" - ")))+
+  geom_point(size = 4)+
+  scale_color_manual(values = c("deeppink", "lightblue3", "green"))+
+  annotate("text", x = 1997.5, y = 140, label = "Juicy - The Notorious B.I.G" )+
+  guides(alpha = FALSE)+
+  bmox::theme_bmox()
+  #geom_label(data = subset(rankings_sep, artist = "The Notorious B.I.G"))
+  #gghighlight::gghighlight(artist == "JAY-Z")+
+  
+
+##FEATURED PLOTS BY YEAR
+rankings_sep %>% 
+  filter(!is.na(featured)) %>% 
+  ggplot(aes(year, points))+
+  geom_point(color = "Green", size = 4)+
+  gghighlight::gghighlight(featured == "Snoop Dogg")
+
+
+## Women in Rap
+ggplot(rankings_sep, aes(year, points, color = factor(gender), alpha =.5))+
+  geom_point(size = 4, color = "deeppink")+
+  gghighlight::gghighlight(gender == "female")+
+  bmox::theme_bmox()
+  
+
+
+```
+
+
+
 
