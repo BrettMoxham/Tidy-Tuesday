@@ -52,11 +52,12 @@ plot_featured <- polls %>%
   filter(!is.na(featured)) %>% 
   count(featured, sort = T) %>% 
   top_n(10) %>% 
-  ggplot(aes(reorder(featured, -n), n))+
+  ggplot(aes(reorder(featured, n), n))+
   geom_col(fill = "firebrick")+
+  coord_flip()+
   bmox::theme_bmox()+
   theme(
-    axis.text.x = element_text(angle = 90),
+    axis.text.x = element_text(),
     panel.grid.major.x  = element_blank(),
     panel.grid.minor = element_blank()
     
@@ -64,18 +65,20 @@ plot_featured <- polls %>%
   labs(
     y ="",
     x="",
-    title = "Featured Artists"
+    title = "Featured Artists",
+    subtitle = "Featured Artist Mentions"
   )
 
 
 plot_artist <- polls %>% 
   count(artist, sort = T) %>% 
   top_n(10) %>% 
-  ggplot(aes(reorder(artist, -n), n))+
-  geom_col(fill = "blue")+
+  ggplot(aes(reorder(artist, n), n))+
+  geom_col(fill = "deepskyblue")+
+  coord_flip()+
   bmox::theme_bmox()+
   theme(
-    axis.text.x = element_text(angle = 90),
+    #axis.text.x = element_text(),
     panel.grid.major.x  = element_blank(),
     panel.grid.minor = element_blank()
     
@@ -83,7 +86,8 @@ plot_artist <- polls %>%
   labs(
     y ="",
     x="",
-    title = "Main Artists"
+    title = "Main Artists",
+    subtitle = "Artist Mentions"
   )
 
 
@@ -123,34 +127,97 @@ rankings_sep %>%
 
 
 ## ARTIST PLOTS BY YEAR
-ggplot(rankings_sep, aes(year, points, color = factor(gender), alpha =.5, label = paste(title, artist, sep =" - ")))+
-  geom_point(size = 4)+
+artist_points <- ggplot(rankings_sep, aes(year, points, color = factor(gender),label = paste(title, artist, sep =" - ")))+
+  geom_point(size = 2)+
+  ggrepel::geom_text_repel(data = subset(rankings_sep, points > 50), color = "black")+
   scale_color_manual(values = c("deeppink", "lightblue3", "green"))+
-  annotate("text", x = 1997.5, y = 140, label = "Juicy - The Notorious B.I.G" )+
+  bmox::theme_bmox()+
+  theme(
+    panel.grid.major= element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.1,vjust = 1, face = "bold"),
+    plot.subtitle = element_text(hjust =0.1,vjust =1)
+  )+
   guides(alpha = FALSE)+
-  bmox::theme_bmox()
-  #geom_label(data = subset(rankings_sep, artist = "The Notorious B.I.G"))
-  #gghighlight::gghighlight(artist == "JAY-Z")+
+  labs(
+    title = "Song Points by Year",
+    subtitle = "By Artist",
+    y = "Song Points",
+    x ="Year",
+    color = "Artist Gender"
+  )
+  
   
 
 ##FEATURED PLOTS BY YEAR
-rankings_sep %>% 
+featured_points <- rankings_sep %>% 
   filter(!is.na(featured)) %>% 
-  ggplot(aes(year, points))+
-  geom_point(color = "Green", size = 4)+
-  gghighlight::gghighlight(featured == "Snoop Dogg")
+  ggplot(aes(year, points, color = gender, label = paste(title, featured, sep = " - ")))+
+  geom_point(size = 2)+
+  ggrepel::geom_text_repel(data = subset(rankings_sep, points > 20 & !is.na(featured)), color = "black", force = 10, size = 10)+
+  #gghighlight::gghighlight(featured == "Snoop Dogg")+
+  bmox::theme_bmox()+
+  theme(
+    panel.grid.major= element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.1,vjust = 1, face = "bold"),
+    plot.subtitle = element_text(hjust =0.1,vjust =1)
+  )+
+  labs(
+    title = "Song Points by Year",
+    subtitle = "By Featured Artist",
+    y = "Song Points",
+    x ="Year",
+    color = "Featured Artist Gender"
+  )
 
 
 ## Women in Rap
-ggplot(rankings_sep, aes(year, points, color = factor(gender), alpha =.5))+
-  geom_point(size = 4, color = "deeppink")+
-  gghighlight::gghighlight(gender == "female")+
-  bmox::theme_bmox()
-  
-
+women_points <- rankings_sep %>%
+  filter(gender == "female") %>% 
+ggplot(aes(year, points, color = factor(gender), label = paste(title, artist, sep = " - ")))+
+  geom_point(size = 2)+
+  #gghighlight::gghighlight(gender == "female")+
+  ggrepel::geom_text_repel(data = subset(rankings_sep, gender == "female", size = 25))+
+  bmox::theme_bmox()+
+  theme(
+    panel.grid.major= element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(vjust = 1, face = "bold"),
+    plot.subtitle = element_text(hjust =0.1,vjust =1)
+  )+
+  guides(color = FALSE)+
+  labs(
+    title = "Women in Rap",
+    y = "Song Points",
+    x ="Year"
+  )
 
 ```
 
 
+## Combining Graphs
+
+```{r}
+library(cowplot)
+library(gridExtra)
+
+full_plot_cowplot <- ggdraw()+
+  draw_plot(plot_artist, x = 0, y = .5, width = .5, height = 0.5)+
+  draw_plot(plot_featured, x = 0.5, y = 0.5, width = .5, height = 0.5)+
+  draw_plot(women_points, x = 0, y = 0, width = 1, height = 0.5)
+
+save_plot("Images/Rapper/07-26-2020-full_plot_cowplot.png", full_plot_cowplot, base_width = 25, base_height = 15, limitsize = FALSE)
+
+full_plot_grid_extra <- grid.arrange(plot_artist, plot_featured,
+             women_points, artist_points,
+             ncol =2, nrow = 2,
+            layout_matrix = rbind(c(1,2), c(3,4)))    
+
+ggsave("Images/Rapper/07-26-2020-full_plot_grid_extra.png", full_plot_grid_extra, width = 25, height = 15)
+
+
+
+```
 
 
