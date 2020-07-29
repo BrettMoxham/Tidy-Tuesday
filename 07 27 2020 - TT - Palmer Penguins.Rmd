@@ -1,0 +1,71 @@
+---
+title: "07-28-2020 TT: Palmer Penguins"
+author: "Brett Moxham"
+date: "27/07/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Data and Libraries
+
+```{r}
+library(tidyverse)
+
+
+penguins.csv <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-28/penguins.csv')
+
+penguins_raw.csv <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-28/penguins_raw.csv')
+
+```
+
+
+
+## First Look
+
+```{r}
+skimr::skim(penguins.csv)
+skimr::skim(penguins_raw.csv)
+
+
+penguins.csv %>% 
+  distinct(island)
+
+
+
+penguins_na_omit <- penguins.csv %>% 
+  na.omit() # removes 11 rows of data
+```
+
+
+## Graph
+
+
+```{r}
+scatter <- penguins_na_omit %>% 
+  ggplot(aes(body_mass_g, flipper_length_mm, color = sex, shape = species))+
+  geom_point(size = 2, alpha = 0.7)+
+  facet_wrap(vars(year, island))+
+  bmox::theme_bmox()+
+  theme(
+    panel.grid.major = element_blank(),
+    #panel.grid.minor = element_blank()
+    plot.margin = margin(1,1,1,1, unit = "cm")
+  )+
+  labs(
+    x = "Body Weight (in grams)" ,
+    y = "Flipper Length (in mm)" ,
+    title = "07 27 2020 - Tidy Tuesday - Palmer Penguins",
+    subtitle = "Examining Body Weight and Flipper Length in the Palmer Station Penguins",
+    caption = "@bmoxO9 | Source: Tidy Tuesday | #TidyTuesday #100DaysofCode",
+    shape = "Species",
+    color = "Sex"
+  )
+
+
+ggsave("Images/PalmerPenguins/scatter.png", scatter, height = 9, width = 12)
+```
+
+
+
