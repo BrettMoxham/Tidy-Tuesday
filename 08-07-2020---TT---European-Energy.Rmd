@@ -1,0 +1,281 @@
+---
+title: "08 07 2020 - Tidy Tuesday - European Energy"
+author: "Brett Moxham"
+date: "07/08/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Library and Data
+
+Let's load in our data and libraries. Our data comes from the [European Energy Tidy Tuesday data set.](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-08-04/readme.md)
+
+```{r, message = FALSE}
+library(tidyverse)
+
+
+energy_types <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-04/energy_types.csv')
+country_totals <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-04/country_totals.csv')
+
+
+```
+
+
+## Quick EDA
+
+Let's take a quick look at our data. 
+
+
+```{r}
+skimr::skim(energy_types)
+```
+
+In our `energy_types` data set we've got 37 different countries, however we are missing 1 country name it seems. Let see which one is missing. 
+
+
+```{r}
+energy_types %>% 
+  filter(is.na(country_name))
+
+```
+
+The United Kingdom is our country name that is missing. Lets fix that. 
+
+
+```{r}
+energy_types <- energy_types %>% 
+  mutate(country_name = case_when(
+    country == "UK" ~ "United Kingdom",
+    TRUE ~ country_name
+  ))
+    
+
+skimr::skim(energy_types)
+```
+
+
+We've now got a full data set for `energy_types`.
+
+
+
+Lets take a quick look at the `country_totals` data set.
+
+
+```{r}
+skimr::skim(country_totals)
+```
+
+This time we have 5 `country_names` missing from our data set. Lets fix that as well.
+
+
+```{r}
+country_totals %>% 
+  filter(is.na(country_name))
+
+
+country_totals <- country_totals %>% 
+  mutate(country_name = case_when(
+    country == "UK" ~ "United Kingdom",
+    TRUE ~ country_name
+  ))
+
+
+skimr::skim(country_totals)
+```
+
+
+
+Now that we have our `country_names` updated. Lets actually take a look and see what is containted within our data sets.
+
+
+
+```{r}
+country_totals %>% 
+  head(10) %>% 
+  knitr::kable()
+
+
+energy_types %>% 
+  head(10) %>% 
+  knitr::kable()
+```
+
+
+Looking at our `country_totals` data set, it looks like we have a summary of a countrys energy export/import. Where as the `energy_types` data set contains a breakdown of a countrys actual energy use by type. Looking at the `levels` vector, we have a `Level 2` level. A tweet from Tom Mock outlines that we do not need to factor this into our data, as it is a subset of `hydro`. [This means to include it would be to double count `hydro`.](https://twitter.com/thomas_mock/status/1290771994192023554) We can filter these entries out. Our raw energy totals are in [Gigawatt Hours](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-08-04/readme.md)
+
+
+```{r}
+energy_type_l2 <- energy_types %>% 
+  filter(level != "Level 2") 
+```
+
+
+
+
+## Visualization
+
+I want visalize a breakdown of each country's energy use by production method for the year of 2018. Lets see what we can come up with. 
+
+
+```{r}
+energy_type_l2 %>% 
+  select(-c(`2016`,`2017`)) %>% 
+  ggplot(aes(country_name, `2018`, fill = type))+ #try and get a reorder
+  geom_col()+
+  coord_flip() ->p_0
+
+
+p_0
+```
+
+
+This first plot is nice but it's hard to compare between countries. We need to reorder our country name somehow. Let add together the total energy usage by `type` to see how much total energy each country used and use that to order our plot. 
+
+
+```{r}
+energy_total <- energy_type_l2 %>% 
+  select(-c(`2016`, `2017`)) %>% 
+  group_by(country_name) %>% 
+  mutate(
+    energy_total = sum(`2018`)/1000,
+    `2018` = `2018`/1000
+    
+  )
+
+energy_total
+```
+
+
+Now lets try making our graph again.
+
+```{r}
+energy_total %>% 
+  ggplot(aes(fct_reorder(country_name, energy_total), `2018`, fill = type))+
+  geom_col()+
+  theme(
+    #axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  )+
+  labs(
+    fill = "Total Energy Consumption by Production Method
+(Per 1000 Gigawatts)")+
+  coord_flip() -> p_1
+
+p_1
+```
+
+
+This is a lot easier to read! We can see how Germany France and the U.K. are Europe's largest consumer of energy. However this also makes it difficult to compare the largest energy consumers to the smallest. Let's see if we can look at the proportion of energy used by each instead. We start by building a proportion column.
+
+```{r}
+energy_prop <- energy_total %>% 
+  group_by(country) %>% 
+  mutate(
+    prop = `2018`/energy_total
+  )
+```
+
+We now have a proportion of energy consumption by type that we can use to compare each country. Lets take a look.
+
+
+```{r}
+energy_prop %>% 
+  ggplot(aes(country_name, prop , fill = type))+
+  geom_col()+
+  coord_flip()
+```
+
+This is cool, we have a way to compare countries in their energy use. For instance on the bottom, we can see that Albania uses nearly all `hyrdo` power as their many energy source. Lets put them in order of their total energy consumption so that we can reference total energy to their proportion of use.
+
+```{r}
+energy_prop %>% 
+  ggplot(aes(fct_reorder(country_name, energy_total), prop, fill = type))+
+  geom_col()+
+ # scale_y_continuous(labels = scales::percent)+
+  coord_flip() +
+    theme(
+    #axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  )+
+  labs(
+    y = "% of Energy Consumption by Production Method"
+  ) -> p_2
+
+p_2
+```
+
+Now that we have our two plots in the same order, lets take a look at them side by side. 
+
+```{r echo=FALSE}
+# This is to remove the legend from P1 as they are the same in both plots. As well as change the legend title in p2
+p_1 <- p_1+
+  labs(
+    y = "Total Energy Consumption
+by Production Method (Per 1000 Gigawatts)"
+  )+
+  theme(
+    legend.position = "none"
+  )
+p_2 <- p_2+
+  labs(
+    fill = "Type of Energy Production Method",
+    caption = "@bmoxO9 | #TidyTuesday | Source: TidyTuesday"
+  )
+```
+
+
+
+```{r, warning = FALSE}
+plot_joined <-  cowplot::plot_grid(p_1, p_2, cols = 2)
+```
+
+```{r fig.height = 7, fig.width = 7*1.618}
+plot_joined 
+```
+
+
+This is a super neat plot. Some insights provided by this graph:
+
+* Germany, The Netherlands and Poland still have work to do in terms of their conventional energy use.
+* France is the largest user of nuclear energy in both absolute and relative terms. 
+* Norway and Albania both receieve over 95% of their energy from hydro power
+
+
+
+
+
+
+```{r, eval = FALSE, echo = FALSE}
+title <- cowplot::ggdraw() + 
+  cowplot::draw_label(
+    "European Energy Consumption (2018)",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7)
+  )
+
+
+plot_final <- cowplot::plot_grid(
+  title, plot_joined,
+  ncol = 1,
+  # rel_heights values control vertical title margins
+  rel_heights = c(0.1, 1)
+)
+```
+
+
+```{r, eval = FALSE, echo = FALSE}
+# This is just to generate a picture. Not needed in this analysis.
+ggsave("Images/European_Energy/country.png", plot_final, height = 8, width = 16)
+```
+
+
+
