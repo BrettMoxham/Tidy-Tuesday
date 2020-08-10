@@ -88,7 +88,7 @@ skimr::skim(country_totals)
 
 
 
-Now that we have our `country_names` updated. Lets actually take a look and see what is containted within our data sets.
+Now that we have our `country_names` updated. Lets actually take a look and see what is contained within our data sets.
 
 
 
@@ -104,7 +104,7 @@ energy_types %>%
 ```
 
 
-Looking at our `country_totals` data set, it looks like we have a summary of a countrys energy export/import. Where as the `energy_types` data set contains a breakdown of a countrys actual energy use by type. Looking at the `levels` vector, we have a `Level 2` level. A tweet from Tom Mock outlines that we do not need to factor this into our data, as it is a subset of `hydro`. [This means to include it would be to double count `hydro`.](https://twitter.com/thomas_mock/status/1290771994192023554) We can filter these entries out. Our raw energy totals are in [Gigawatt Hours](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-08-04/readme.md)
+Looking at our `country_totals` data set, it looks like we have a summary of a country's energy export/import. Where as the `energy_types` data set contains a breakdown of a country actual energy use by type. Looking at the `levels` vector, we have a `Level 2` level. A tweet from Tom Mock outlines that we do not need to factor this into our data, as it is a subset of `hydro`. [This means to include it would be to double count `hydro`.](https://twitter.com/thomas_mock/status/1290771994192023554) We can filter these entries out. Our raw energy totals are in [Gigawatt Hours](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-08-04/readme.md)
 
 
 ```{r}
@@ -117,7 +117,7 @@ energy_type_l2 <- energy_types %>%
 
 ## Visualization
 
-I want visalize a breakdown of each country's energy use by production method for the year of 2018. Lets see what we can come up with. 
+I want visualize a breakdown of each country's energy use by production method for the year of 2018. Lets see what we can come up with. 
 
 
 ```{r}
@@ -241,7 +241,7 @@ This is a super neat plot. Some insights provided by this graph:
 
 * Germany, The Netherlands and Poland still have work to do in terms of their conventional energy use.
 * France is the largest user of nuclear energy in both absolute and relative terms. 
-* Norway and Albania both receieve over 95% of their energy from hydro power
+* Norway and Albania both receive over 95% of their energy from hydro power
 
 
 
