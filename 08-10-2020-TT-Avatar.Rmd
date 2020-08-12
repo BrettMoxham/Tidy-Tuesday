@@ -1,0 +1,96 @@
+---
+title: "08-10-2020-TT-Avatar"
+author: "Brett Moxham"
+date: "10/08/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Let's load the data, and our libraries. Our data comes from the [Tidy Tuesday weekly data challenge.](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-08-11/readme.md) 
+
+
+```{r}
+library(tidyverse)
+
+
+avatar <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-11/avatar.csv')
+scene_description <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-11/scene_description.csv')
+
+```
+
+
+## EDA
+
+```{r}
+skimr::skim(avatar)
+
+skimr::skim(scene_description)
+
+
+avatar %>% 
+  filter(is.na(imdb_rating)) %>% 
+  view()
+```
+
+
+Avatar is missing 1 `imdb_rating` for "The Seige of North, Part 2". It probably didn't parse correctly. We can find that rating on the [IMDB Website](https://www.imdb.com/title/tt10512638/). Let's add in the missing rating to complete our dataset. The missing rating is *9.7*. We can use the `chapter_num` and `book_num` to make sure we add our data correctly.
+
+```{r}
+avatar %>% 
+      mutate(
+        imdb_rating = case_when( book_num == 1 & chapter_num == 20 ~ 9.7,
+                                 TRUE ~ imdb_rating
+          
+        )
+      ) -> avatar
+
+skimr::skim(avatar)
+```
+
+We've now have a complete set of `imdb_ratings`.
+
+## Visualization
+
+
+```{r}
+distinct_avatar <- avatar %>% 
+  select(book, book_num, chapter, chapter_num, imdb_rating) %>% 
+  distinct(book, book_num, chapter, chapter_num, imdb_rating)
+```
+
+
+```{r}
+plot_tile <- distinct_avatar %>% 
+  ggplot(aes(
+    x =fct_reorder(book, book_num),
+    y = chapter_num,
+    label = imdb_rating
+  )) +
+  geom_tile(aes(fill = imdb_rating))+
+  geom_text(aes(x = book, y = chapter_num, label = imdb_rating ), alpha = 0.2, size = 4, fontface = "bold", color = "black")+
+  scale_y_reverse(breaks = round(seq(min(distinct_avatar$chapter_num), max(distinct_avatar$chapter_num), by = 1),1))+
+  scale_fill_distiller(palette ="Reds")+
+  bmox::theme_bmox()+
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.caption = element_text(size = 7)
+  ) +
+  labs(
+    title = "Avatar: The Last Airbender",
+    subtitle = "Episode Ratings by Book (Season)",
+    x = NULL,
+    y = "Episode Number",
+    fill = "IMDB Rating",
+    caption = "@bmoxO9 | #TidyTuesday 
+Source: https://tinyurl.com/y65yx8l7"
+  )
+```
+
+```{r}
+ggsave("Images/Avatar/avatar_heatmap.png", plot_tile, height = 6, width = 6)
+```
+
